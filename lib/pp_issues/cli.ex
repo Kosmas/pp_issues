@@ -9,7 +9,9 @@ defmodule PPIssues.CLI do
   """
 
   def run(argv) do
-    parse_args(argv)
+    argv
+      |> parse_args
+      |> process
   end
 
   @doc """
@@ -26,17 +28,22 @@ defmodule PPIssues.CLI do
 
     case parse do
 
-    { [help: true ], _, _ }
-      -> :help
-
-    { _, [ user, project, count ], _ }
-      -> { user, project, String.to_integer(count) }
-
-    { _, [ user, project ], _ }
-      -> { user, project, @default_count }
-
-    _ -> :help
+    { [help: true ], _,            _ } -> :help
+    { _, [ user, project, count ], _ } -> { user, project, String.to_integer(count) }
+    { _, [ user, project ],        _ } -> { user, project, @default_count }
+    _                                  -> :help
 
     end
+  end
+
+  def process(:help) do
+    IO.puts """
+    usage: issues <user> <project> [ count | #{@default_count} ]
+    """
+    System.halt(0)
+  end
+
+  def process({user, project, _count}) do
+    PPIssues.GithubIssues.fetch(user, project)
   end
 end
